@@ -32,6 +32,7 @@ const auth = admin.auth();
 //     });
 // });
 
+
 // Creacion de Usuario de Autenticacion
 // exports.newUser = functions.https.onCall ((data, context) => {
 export const newUser = functions.https.onCall ((data, context) => {
@@ -39,7 +40,7 @@ export const newUser = functions.https.onCall ((data, context) => {
     const _email = data.email;
     const _password = data.password;
     const _displayName = data.displayName;
-    const _phoneNumber = data.phoneNumber;
+    // const _phoneNumber = data.phoneNumber;
     
     return auth.createUser({
       email: _email,
@@ -47,24 +48,24 @@ export const newUser = functions.https.onCall ((data, context) => {
       password: _password,
       displayName: _displayName,
       disabled: false,
-      phoneNumber: _phoneNumber,
+      // phoneNumber: _phoneNumber,
       // photoURL: "http://www.example.com/12345678/photo.png",
     })
         .then( userCredential => {
+          console.log('userCredential = > ', userCredential);
           return {
             Ok: true,
             Code: userCredential.uid,
-            Message: `Usuario Creado con el correo: ${_email}`
+            // tokenId: userCredential.
+            message: `Usuario Creado con el correo: ${_email}`
           }
         })
         .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-
+          console.log('Error => ', error);
           return {
-            ok: false,
-            errorCode: errorCode,
-            message: errorMessage
+            Ok: false,
+            errorCode: error.errorInfo.code,
+            message: error.errorInfo.message
           }
         });
   }
@@ -91,22 +92,21 @@ exports.updateUser = functions.https.onCall( (data, context) => {
     return {
       Ok: true,
       Code: _userUId,
-      Message: `Usuario actualizado con el email: ${_userEmail}`,
+      message: `Usuario actualizado con el email: ${_userEmail}`,
       // usuario: userCredential
     }
   })
   .catch((error) => {
-    const errorCode = error.code;
-    const errorMessage = error.message;
 
     return {
-      ok: false,
-      errorCode: errorCode,
-      errorMessage: errorMessage,
+      Ok: false,
+      Code: error.errorCode,
+      message: error.errorMessage,
       // error: error
     }
   });
 })
+
 
 // Creacion de usuario de la coleccion Customer,
 // Se ejecuta inmediatamente despues de la creacion del usuario de autenticacion
@@ -124,19 +124,20 @@ exports.insertCustomer = functions.auth.user().onCreate( async (user) => {
               DocumentNumber: "0000000000",
             })
             .then( ( customer ) => {
-              console.log("Usario Creado en la coleccion Customer ", _userUId);
+              console.log('Customer => ', customer);
               return {
                 Ok:true,
                 Code: _userUId,
-                Message: `Se creo en la coleccion Customer el cliente con UserUId : ${_userUId}`
+                // tokeId: 
+                message: `Se creo en la coleccion Customer el cliente con UserUId : ${_userUId}`
               } 
             })
             .catch( (error) => {
-              console.log("Error de creacion en la coleccion Customer! ", error);
+              console.log("Error de creacion en la coleccion Customer: ", _userUId);
               return {
-                ok:false,
-                errorCode: error.code,
-                errorMessage: error.message
+                Ok:false,
+                Code: error.errorCode,
+                message: error.errorMessage
               }
             })
 });
@@ -165,15 +166,15 @@ export const getCustomer = functions.https.onCall( (data, context) => {
           return {
             Ok: true,
             Code: _userUID,
-            Message: `Se recupero los datos del Customer con UserUid : ${_userUID}`
+            message: `Se recupero los datos del Customer con UserUid : ${_userUID}`
           } 
       })
       .catch( (error) => {
           console.log("Error, no se encontro el usuario con UID: ", _userUID);
           return {
-            ok:false,
-            errorCode: error.code,
-            errorMessage: error.message
+            Ok:false,
+            Code: error.errorCode,
+            message: error.errorMessage
           }
       });
 })
@@ -202,18 +203,19 @@ exports.updateCustomer = functions.https.onCall( (data, context ) => {
           return {
             Ok: true,
             Code: _userUId,
-            Message: `Se actualizo los datos del Customer con UserUid : ${_userUId}`
+            message: `Se actualizo los datos del Customer con UserUid : ${_userUId}`
           }}
         )
         .catch( (error) => {
           console.log("Error, No se actualizolos datos del usuario con UID: ", _userUId);
           return {
-            ok:false,
-            errorCode: error.code,
-            errorMessage: error.message
+            Ok:false,
+            Code: error.errorCode,
+            message: error.errorMessage
           }}
         );
 })
+
 
 // Crea o Adiciona una subcoleccion de Cuentas de Bancos en la coleccion
 // de Customer
@@ -246,7 +248,7 @@ exports.createAccountBankUser = functions.https.onCall( async (data, context) =>
             return {
               Ok: true,
               Code: accountBank.id,
-              Message: "Se creo exitosamente la colleccion Cta. de Banco del Customer."
+              message: "Se creo exitosamente la colleccion Cta. de Banco del Customer."
             };
           })
           .catch( (error) => {
@@ -254,8 +256,8 @@ exports.createAccountBankUser = functions.https.onCall( async (data, context) =>
 
             return {
               ok: false,
-              errorCode: error.errorCode,
-              errorMessage: error.message
+              Code: error.errorCode,
+              message: error.errorMessage
             };
           })
 })
@@ -271,22 +273,23 @@ exports.getAccountBankCustomer = functions.https.onCall( (data,context) => {
           console.log(accountList);
 
           return {
-            ok: true,
-            errorCode: 0,
-            errorMessage: "Recuperacion exitosa."
+            Ok: true,
+            Code: 0,
+            message: "Recuperacion exitosa."
           }
         })
         .catch( (error) => {
           console.log("No se pudo adicionar la cuenta de Banco del Customer: ", _userUId);
 
           return {
-            ok: false,
-            errorCode: error.errorCode,
-            errorMessage: error.message
+            Ok: false,
+            Code: error.errorCode,
+            message: error.errorMessage
           };
         })
   // const accountBankList = accountBankListSnap.
 })
+
 
 // Crea una coleccion de Transaccion de Compra/Venta de Moneda Nacional o Extranjera
 // de un Customer/Cliente
@@ -315,9 +318,9 @@ exports.createCustomerTransaction = functions.https.onCall( (data, context) => {
 
   return db.collection("CustomerTransaction")
             .add({
-                CustomerId: _userUID,
+                CustomerUId: _userUID,
                 TransactionDate: admin.firestore.Timestamp.fromMillis(
-                  Date.parse(_transactionDate)
+                  Date.parse(_transactionDate) 
                 ),
                 TransactionNumber: _transactionNumber,
                 AccountSource: {
@@ -348,16 +351,16 @@ exports.createCustomerTransaction = functions.https.onCall( (data, context) => {
               return {
                 Ok: true,
                 Code: transaction.id,
-                Message: `Se creo exitosamente la transaccion en la colleccion de Transacciones con el Id: ${transaction.id}`
+                message: `Se creo exitosamente la transaccion en la colleccion de Transacciones con el Id: ${transaction.id}`
               };
             })
             .catch( (error) => {
               console.log("No se pudo actualizar la transacción: ", _userUID);
 
               return {
-                ok: false,
-                errorCode: error.errorCode,
-                errorMessage: error.message
+                Ok: false,
+                Code: error.errorCode,
+                message: error.errorMessage
               };
             });
 })
@@ -367,7 +370,7 @@ exports.createCustomerTransaction = functions.https.onCall( (data, context) => {
 // de la compañia hacia el Customer/Cliente
 exports.updateCustomerTransaction = functions.https.onCall( (data, context) => {
   // const _userUId = data.UserUId;
-  const _transactionId = data.TransactionId
+  const _transactionId = data.TransactionId;
   const _transferDate = data.TransferDate;
   const _transferNumber = data.TransferNumber;
   const _transferTargetBankName = data.TransferTarget.BankName;
@@ -397,16 +400,16 @@ exports.updateCustomerTransaction = functions.https.onCall( (data, context) => {
     return {
       Ok: true,
       Code: _transactionId,
-      Message: `Se actualizo exitosamente la transaccion en la colleccion de Transacciones con el Id: ${_transactionId}`
+      message: `Se actualizo exitosamente la transaccion en la colleccion de Transacciones con el Id: ${_transactionId}`
     };
   })
   .catch( (error) => {
     console.log("No se pudo actualizar la transaccion: ", _transactionId);
 
     return {
-      ok: false,
-      errorCode: error.errorCode,
-      errorMessage: error.message
+      Ok: false,
+      Code: error.errorCode,
+      message: error.errorMessage
     };
   })
 })
@@ -422,11 +425,67 @@ exports.getTransaction = functions.https.onRequest( async(request, response) => 
 
 })
 
+
+// Inserta una nueva coleccion con el tipo de cambio de compra/venta
+// para dolares americanos
+exports.insertExchangeRate = functions.https.onCall( (data, context) => {
+  const _rateDate = data.RateDate;
+  const _currencyFrom = data.CurrencyFrom;
+  const _currencyTo = data.CurrencyTo;
+  const _rateSale = data.rateSale;
+  const _rateBuy = data.rateBuy;
+
+  const exchangeRate = db.collection("ExchangeRate");
+
+  return exchangeRate.add({
+        RateDate: admin.firestore.Timestamp.fromMillis(
+          Date.parse(_rateDate)
+        ),
+        CurrencyFrom: _currencyFrom,
+        CurrencyTo: _currencyTo,
+        BuyValue: _rateBuy,
+        SaleValue: _rateSale
+      })
+      .then( (exchange) => {
+        console.log(`Se creo exitosamente el tipo de cambio en la coleccion ExchangeRate, para la fecha: ${_rateDate}`);
+
+        return {
+          Ok: true,
+          Code: exchange.id,
+          message: `Tipo de cambio creada en la coleccion ExchangeRate con el id: ${exchange.id}`
+        }
+      })
+      .catch( (error) => {
+        console.log(`Error al crearse el tipo de Cambio para la fecha: ${_rateDate}`);
+
+        return {
+          ok: false,
+          Code: error.errorCode,
+          message: error.errorMessage
+        }
+      })
+})
+
+
+// Recupera el ultimo tipo de cambio
+export const getExchangeRate = functions.https.onRequest ( async (request, response) => {
+
+  // const _rateDate = request.query.RateDate;
+  const RateDate = admin.firestore.Timestamp.fromDate(new Date());
+
+  const exchangeRateRef = db.collection("ExchangeRate"); //.orderBy("RateDate", "desc").limit(1);
+  const exchangeRateSanp = await exchangeRateRef.where("RateDate", "<=", RateDate).orderBy("RateDate", "desc").limit(1).get();
+  const exchangeRate = exchangeRateSanp.docs.map( exchange => exchange.data());
+
+  response.json(exchangeRate);
+
+})
+
 // Recupera la coleccion de Bancos
 export const getBanks = functions.https.onRequest( async (request, response) => {
   // const banco = request.query.banco;
   // response.json({
-  //     mensaje: banco
+      // mensaje: banco
   //   });
 
   const banksRef = db.collection('Bank');
