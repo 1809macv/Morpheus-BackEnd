@@ -295,56 +295,81 @@ exports.getAccountBankCustomer = functions.https.onCall( (data,context) => {
 // de un Customer/Cliente
 exports.createCustomerTransaction = functions.https.onCall( (data, context) => {
   // const _userUId = (context.auth?.uid != undefined) ? data.UserUID : context.auth?.uid;
+  
   const _userUID = context.auth?.uid || data.UserUID;
+  const _transactionStatus = "INCOMPLETE";
   const _transactionDate = data.TransactionDate;
+  const _typeOperation = data.TypeOperation;
+  const _exchangeRateUsed = data.ExchangeRateUsed;
   const _transactionNumber = data.TransactionNumber;
+
+  const _accountSourceBankCode = data.AccountSource.BankCode;
   const _accountSourceBankName = data.AccountSource.BankName;
-  const _accountSourceBankAccount = data.AccountSource.BankAccount;
   const _accountSourceCurrency = data.AccountSource.Currency;
   const _accountSourceAmount = data.AccountSource.Amount;
+
+  const _accountTargetBankCode = data.AccountTarget.BankCode;
   const _accountTargetBankName = data.AccountTarget.BankName;
   const _accountTargetBankAccount = data.AccountTarget.BankAccount;
   const _accountTargetCurrency = data.AccountTarget.Currency;
   const _accountTargetAmount = data.AccountTarget.Amount;
-  const _typeOperation = data.TypeOperation;
+
+  const _transferSourceBankCode = data.TransferSource.BankCode;
   const _transferSourceBankName = data.TransferSource.BankName;
   const _transferSourceBankAccount = data.TransferSource.BankAccount;
   const _transferSourceCurrency = data.TransferSource.Currency;
-  const _exchangeRateUsed = data.ExchangeRateUsed;
+  const _transferSourceAmount = data.TransferSource.Amount;
 
-  const _transactionStatus = "INCOMPLETE";
+  const _transferTargetBankCode = data.TransferTarget.BankCode;
+  const _transferTargetBankName = data.TransferTarget.BankName;
+  const _transferTargetBankAccount = data.TransferTarget.BankAccount;
+  const _transferTargetCurrency = data.TransferTarget.Currency;
+  const _transferTargetAmount = data.TransferTarget.Amount;
 
   // console.log("Se asignaron todas las variables.");
 
   return db.collection("CustomerTransaction")
             .add({
                 CustomerUId: _userUID,
+                TransactionStatus: _transactionStatus,
                 TransactionDate: admin.firestore.Timestamp.fromMillis(
                   Date.parse(_transactionDate) 
                 ),
+                TypeOperation: _typeOperation,
+                ExchangeRateUsed: _exchangeRateUsed,
                 TransactionNumber: _transactionNumber,
+
+                TransferDate: null,
+                TransferNumber: '',
+
                 AccountSource: {
+                  BankCode: _accountSourceBankCode,
                   BankName: _accountSourceBankName,
-                  BankAccount: _accountSourceBankAccount,
                   Currency: _accountSourceCurrency,
                   Amount: _accountSourceAmount
                 },
                 AccountTarget: {
+                  BankCode: _accountTargetBankCode,
                   BankName: _accountTargetBankName,
                   BankAccount: _accountTargetBankAccount,
                   Currency: _accountTargetCurrency,
                   Amount: _accountTargetAmount
                 },
-                TypeOperation: _typeOperation,
-                ExchangeRateUsed: _exchangeRateUsed,
                 TransferSource: {
+                  BankCode: _transferSourceBankCode,
                   BankName: _transferSourceBankName,
                   BankAccount: _transferSourceBankAccount,
                   Currency: _transferSourceCurrency,
-                  Amount: _accountSourceAmount
+                  Amount: _transferSourceAmount
                 },
-                TransactionStatus: _transactionStatus
 
+                TransferTarget: {
+                  BankCode: _transferTargetBankCode,
+                  BankName: _transferTargetBankName,
+                  BankAccount: _transferTargetBankAccount,
+                  Currency: _transferTargetCurrency,
+                  Amount: _transferTargetAmount
+                }
               })
             .then( (transaction) => {
               console.log("Transaccion creada exitosamente con Id: ", transaction.id);
@@ -373,11 +398,13 @@ exports.updateCustomerTransaction = functions.https.onCall( (data, context) => {
   const _transactionId = data.TransactionId;
   const _transferDate = data.TransferDate;
   const _transferNumber = data.TransferNumber;
+  const _transactionStatus = "COMPLETE";
+
+  const _transferTargetBankCode = data.TransferTarget.BankCode;
   const _transferTargetBankName = data.TransferTarget.BankName;
   const _transferTargetBankAccount = data.TransferTarget.BankAccount;
   const _transferTargetCurrency = data.TransferTarget.Currency;
   const _transferTargetAmount = data.TransferTarget.Amount;
-  const _transactionStatus = "COMPLETE";
 
   const transfer = db.collection("CustomerTransaction");
 
@@ -386,13 +413,15 @@ exports.updateCustomerTransaction = functions.https.onCall( (data, context) => {
       Date.parse(_transferDate)
     ),
     TransferNumber: _transferNumber,
+    TransactionStatus: _transactionStatus,
+
     TransferTarget: {
+      BankCode: _transferTargetBankCode,
       BankName: _transferTargetBankName,
       BankAccount: _transferTargetBankAccount,
       Currency: _transferTargetCurrency,
       Amount: _transferTargetAmount,
     },
-    TransactionStatus: _transactionStatus
   })
   .then( (transaction) => {
     console.log("Transaccion actualizada exitosamente con Id: ", _transactionId);
@@ -493,4 +522,28 @@ export const getBanks = functions.https.onRequest( async (request, response) => 
   const banks = banksSnap.docs.map( bank => bank.data());
 
   response.json( banks );
+});
+
+exports.verifyTokenId = functions.https.onCall( (data, context) => {
+  const _tokenId = data.tokenId;
+  // console.log('TokenId recibido: ', _tokenId)
+  return auth.verifyIdToken(_tokenId)
+            .then( (decodedToken) => {
+              // console.log("decodedToken => ",decodedToken);
+              console.log("Fecha Hora de Login : ", new Date().setTime(decodedToken.auth_time).toString());
+              console.log("Fecha Hora de Login : ", new Date().setTime(decodedToken.exp).toLocaleString());
+              return {
+                Ok: true,
+                Code: 'auth/id-token-verified',
+                message: 'Token válido.'
+              };
+            })
+            .catch( (error) => {
+              console.log("Error Verify Token => ", error );
+              return {
+                Ok: false,
+                Code: error.errorInfo.code,
+                message: 'Error de verificacion del Token o el Token ya expiro.'
+              };
+            });
 });
