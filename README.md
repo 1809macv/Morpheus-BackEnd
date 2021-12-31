@@ -3,7 +3,7 @@ BackEnd del proyecto Morpheus, desarrollado para Cloud Firestore.
 
 Autor: Miguel Angel Caceres Valdivia
 
-Este proyecto tiene la finalidad de aprender sobre Cloud Firestore, uso de la autenticacion de Firebasecode.
+Este proyecto tiene la finalidad de aprender sobre Cloud Firestore, uso de la autenticacion de Firebase.
 
 Tiene las siguientes funciones:
 
@@ -30,3 +30,5 @@ updateCustomerTransaction: Esta funciion adiciona y actualiza informacion de la 
 getTransaction: Esta funcion recupera la lista de las traansaccion de la coleccion "CustomerTransaction".
 
 getBanks: Esta funcion muestra un listado de los bancos de la coleccion "Bank".
+
+verifiedToken: Esta funcion devuelve si el token es valido o no.
