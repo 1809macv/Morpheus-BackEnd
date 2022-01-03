@@ -73,7 +73,6 @@ export const newUser = functions.https.onCall ((data, context) => {
 
 
 exports.updateUser = functions.https.onCall( (data, context) => {
-  // const _email = data.email;
   const _userUId = data.userUId;
   const _userEmail = data.userEmail;
   const _password = data.password;
@@ -106,50 +105,6 @@ exports.updateUser = functions.https.onCall( (data, context) => {
     }
   });
 })
-
-
-// Creacion de usuario de la coleccion Customer,
-// Se ejecuta inmediatamente despues de la creacion del usuario de autenticacion
-exports.insertCustomer = functions.auth.user().onCreate( async (user) => {
-  const _userUId = user.uid;
-  const customerRef = db.collection('Customer');
-
-  return customerRef.doc(_userUId)
-            .set({
-              CustomerName: user.displayName,
-              CustomerEMail: user.email,
-              CustomerPhone: user.phoneNumber,
-              CustomerTpe: "PN",
-              DocumentType: "NN",
-              DocumentNumber: "0000000000",
-            })
-            .then( ( customer ) => {
-              console.log('Customer => ', customer);
-              return {
-                Ok:true,
-                Code: _userUId,
-                // tokeId: 
-                message: `Se creo en la coleccion Customer el cliente con UserUId : ${_userUId}`
-              } 
-            })
-            .catch( (error) => {
-              console.log("Error de creacion en la coleccion Customer: ", _userUId);
-              return {
-                Ok:false,
-                Code: error.errorCode,
-                message: error.errorMessage
-              }
-            })
-});
-
-
-// Se ejecuta inmediatament despues de la eliminacion del usuario de autenticacion
-exports.deleteCustomer = functions.auth.user().onDelete( async (user) => {
-  return new Promise( (resolve, reject) => {
-    console.log(`Usuario Eliminado : ${user.email}`);
-    resolve(true);
-  })
-});
 
 
 // Recupera una coleccion de un Customer por su Id
@@ -287,14 +242,12 @@ exports.getAccountBankCustomer = functions.https.onCall( (data,context) => {
             message: error.errorMessage
           };
         })
-  // const accountBankList = accountBankListSnap.
 })
 
 
 // Crea una coleccion de Transaccion de Compra/Venta de Moneda Nacional o Extranjera
 // de un Customer/Cliente
 exports.createCustomerTransaction = functions.https.onCall( (data, context) => {
-  // const _userUId = (context.auth?.uid != undefined) ? data.UserUID : context.auth?.uid;
   
   const _userUID = context.auth?.uid || data.UserUID;
   const _transactionStatus = "INCOMPLETE";
@@ -327,7 +280,6 @@ exports.createCustomerTransaction = functions.https.onCall( (data, context) => {
   const _transferTargetAmount = data.TransferTarget.Amount;
 
   // console.log("Se asignaron todas las variables.");
-
   return db.collection("CustomerTransaction")
             .add({
                 CustomerUId: _userUID,
@@ -444,17 +396,6 @@ exports.updateCustomerTransaction = functions.https.onCall( (data, context) => {
 })
 
 
-// Recupera la lista de Transacciones con el Estado == "INCOMPLETE"
-exports.getTransaction = functions.https.onRequest( async(request, response) => {
-  const transactionRef = db.collection("CustomerTransaction");
-  const transactionSnap = await transactionRef.where("TransactionStatus", "==", "COMPLETE").get();
-  const transaction = transactionSnap.docs.map( trans => trans.data());
-
-  response.json(transaction);
-
-})
-
-
 // Inserta una nueva coleccion con el tipo de cambio de compra/venta
 // para dolares americanos
 exports.insertExchangeRate = functions.https.onCall( (data, context) => {
@@ -496,34 +437,6 @@ exports.insertExchangeRate = functions.https.onCall( (data, context) => {
 })
 
 
-// Recupera el ultimo tipo de cambio
-export const getExchangeRate = functions.https.onRequest ( async (request, response) => {
-
-  // const _rateDate = request.query.RateDate;
-  const RateDate = admin.firestore.Timestamp.fromDate(new Date());
-
-  const exchangeRateRef = db.collection("ExchangeRate"); //.orderBy("RateDate", "desc").limit(1);
-  const exchangeRateSanp = await exchangeRateRef.where("RateDate", "<=", RateDate).orderBy("RateDate", "desc").limit(1).get();
-  const exchangeRate = exchangeRateSanp.docs.map( exchange => exchange.data());
-
-  response.json(exchangeRate);
-
-})
-
-// Recupera la coleccion de Bancos
-export const getBanks = functions.https.onRequest( async (request, response) => {
-  // const banco = request.query.banco;
-  // response.json({
-      // mensaje: banco
-  //   });
-
-  const banksRef = db.collection('Bank');
-  const banksSnap = await banksRef.where("Active", "==", true).get();
-  const banks = banksSnap.docs.map( bank => bank.data());
-
-  response.json( banks );
-});
-
 exports.verifyTokenId = functions.https.onCall( (data, context) => {
   const _tokenId = data.tokenId;
   // console.log('TokenId recibido: ', _tokenId)
@@ -546,4 +459,108 @@ exports.verifyTokenId = functions.https.onCall( (data, context) => {
                 message: 'Error de verificacion del Token o el Token ya expiro.'
               };
             });
+});
+
+
+// onRequest
+//=====================================================================================
+
+// Recupera la lista de Transacciones con el Estado == "INCOMPLETE"
+exports.getTransaction = functions.https.onRequest( async(request, response) => {
+  const transactionRef = db.collection("CustomerTransaction");
+  const transactionSnap = await transactionRef.where("TransactionStatus", "==", "COMPLETE").get();
+  const transaction = transactionSnap.docs.map( trans => trans.data());
+
+  response.json(transaction);
+})
+
+
+// Recupera el ultimo tipo de cambio
+export const getExchangeRate = functions.https.onRequest ( async (request, response) => {
+
+  // const _rateDate = request.query.RateDate;
+  const RateDate = admin.firestore.Timestamp.fromDate(new Date());
+
+  const exchangeRateRef = db.collection("ExchangeRate"); //.orderBy("RateDate", "desc").limit(1);
+  const exchangeRateSanp = await exchangeRateRef.where("RateDate", "<=", RateDate).orderBy("RateDate", "desc").limit(1).get();
+  const exchangeRate = exchangeRateSanp.docs.map( exchange => exchange.data());
+
+  response.json(exchangeRate);
+})
+
+
+// Recupera la coleccion de Bancos
+export const getBanks = functions.https.onRequest( async (request, response) => {
+  // const banco = request.query.banco;
+  // response.json({
+      // mensaje: banco
+  //   });
+
+  const banksRef = db.collection('Bank');
+  const banksSnap = await banksRef.where("Active", "==", true).get();
+  const banks = banksSnap.docs.map( bank => bank.data());
+
+  response.json( banks );
+});
+
+
+// Recupera una coleccion de las Cuentas de los Bancos usados para realizar las
+// transacciones de cambio de monedas de dolares a bolivianos y viceverssa (divisas).
+// export const getCompanyAccount = functions.https.onRequest( async (request, response) => {
+export const getCompanyAccount = functions.https.onCall( async (data, context) => {
+  const _currency = data.Currency;
+  console.log("Currency Services => ", _currency);
+  const accountRef = db.collection('CompanyAccount');
+  const accountSnap = accountRef.where("AccountCurrency", "==", _currency).get();
+  const accounts = (await accountSnap).docs.map( account => account.data());
+
+  return accounts;
+  // response.status(200).json( accounts);
+})
+
+
+// Triggers
+// ===================================================================================
+
+// Creacion de usuario de la coleccion Customer,
+// Se ejecuta inmediatamente despues de la creacion del usuario de autenticacion
+exports.insertCustomer = functions.auth.user().onCreate( async (user) => {
+  const _userUId = user.uid;
+  const customerRef = db.collection('Customer');
+
+  return customerRef.doc(_userUId)
+            .set({
+              CustomerName: user.displayName,
+              CustomerEMail: user.email,
+              CustomerPhone: user.phoneNumber,
+              CustomerTpe: "PN",
+              DocumentType: "NN",
+              DocumentNumber: "0000000000",
+            })
+            .then( ( customer ) => {
+              console.log('Customer => ', customer);
+              return {
+                Ok:true,
+                Code: _userUId,
+                // tokeId: 
+                message: `Se creo en la coleccion Customer el cliente con UserUId : ${_userUId}`
+              } 
+            })
+            .catch( (error) => {
+              console.log("Error de creacion en la coleccion Customer: ", _userUId);
+              return {
+                Ok:false,
+                Code: error.errorCode,
+                message: error.errorMessage
+              }
+            })
+});
+
+
+// Se ejecuta inmediatament despues de la eliminacion del usuario de autenticacion
+exports.deleteCustomer = functions.auth.user().onDelete( async (user) => {
+  return new Promise( (resolve, reject) => {
+    console.log(`Usuario Eliminado : ${user.email}`);
+    resolve(true);
+  })
 });
