@@ -19,6 +19,7 @@ import * as functions from "firebase-functions";
 const db = admin.firestore();
 const auth = admin.auth();
 
+db.settings({ ignoreUndefinedProperties: true })
 
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
@@ -56,7 +57,6 @@ export const newUser = functions.https.onCall ((data, context) => {
           return {
             Ok: true,
             Code: userCredential.uid,
-            // tokenId: userCredential.
             message: `Usuario Creado con el correo: ${_email}`
           }
         })
@@ -92,16 +92,13 @@ exports.updateUser = functions.https.onCall( (data, context) => {
       Ok: true,
       Code: _userUId,
       message: `Usuario actualizado con el email: ${_userEmail}`,
-      // usuario: userCredential
     }
   })
   .catch((error) => {
-
     return {
       Ok: false,
       Code: error.errorCode,
       message: error.errorMessage,
-      // error: error
     }
   });
 })
@@ -109,11 +106,10 @@ exports.updateUser = functions.https.onCall( (data, context) => {
 
 // Recupera una coleccion de un Customer por su Id
 export const getCustomer = functions.https.onCall( (data, context) => {
+
   const _userUID = data.userUID;
-  
   const customerRef = db.collection('Customer');
 
-  // return customerRef.where("UserUId", "==", _userUID)
   return customerRef.doc(_userUID)
       .get()
       .then( (customer) => {
@@ -176,7 +172,6 @@ exports.updateCustomer = functions.https.onCall( (data, context ) => {
 // de Customer
 exports.createAccountBankUser = functions.https.onCall( async (data, context) => {
   
-  // const _userUID = data.userUID;
   const _userUID = context.auth?.uid || data.userUID;
   const _bankName = data.bankname;
   const _accountAlias = data.accountAlias;
@@ -219,7 +214,7 @@ exports.createAccountBankUser = functions.https.onCall( async (data, context) =>
 
 
 // Recupera la lista de los Cuentas de Bancos asociadas del Customer/Cliente
-exports.getAccountBankCustomer = functions.https.onCall( (data,context) => {
+exports.getAccountBankCustomer = functions.https.onCall( (data, context) => {
   const _userUId = data.userUId;
 
   const accountBanksRef = db.collection("Customer").doc(_userUId);
@@ -346,7 +341,7 @@ exports.createCustomerTransaction = functions.https.onCall( (data, context) => {
 // Actualiza la transaccion completando los datos de la transferencia
 // de la compañia hacia el Customer/Cliente
 exports.updateCustomerTransaction = functions.https.onCall( (data, context) => {
-  // const _userUId = data.UserUId;
+  
   const _transactionId = data.TransactionId;
   const _transferDate = data.TransferDate;
   const _transferNumber = data.TransferNumber;
@@ -439,10 +434,10 @@ exports.insertExchangeRate = functions.https.onCall( (data, context) => {
 
 exports.verifyTokenId = functions.https.onCall( (data, context) => {
   const _tokenId = data.tokenId;
-  // console.log('TokenId recibido: ', _tokenId)
+  
   return auth.verifyIdToken(_tokenId)
             .then( (decodedToken) => {
-              // console.log("decodedToken => ",decodedToken);
+              
               console.log("Fecha Hora de Login : ", new Date().setTime(decodedToken.auth_time).toString());
               console.log("Fecha Hora de Login : ", new Date().setTime(decodedToken.exp).toLocaleString());
               return {
@@ -462,8 +457,36 @@ exports.verifyTokenId = functions.https.onCall( (data, context) => {
 });
 
 
+// Recupera una coleccion de las Cuentas de los Bancos usados para realizar las
+// transacciones de cambio de monedas de dolares a bolivianos y viceverssa (divisas).
+// export const getCompanyAccount = functions.https.onRequest( async (request, response) => {
+  export const getCompanyAccount = functions.https.onCall( async (data, context) => {
+    const _currency = data.Currency;
+    
+    const accountRef = db.collection('CompanyAccount');
+    const accountSnap = accountRef.where("AccountCurrency", "==", _currency).get();
+    const accounts = (await accountSnap).docs.map( account => account.data());
+  
+    return accounts;
+  })
+
+
+  // Recupera la coleccion de Bancos
+export const getBanks = functions.https.onCall( async (data, context) => {
+  
+  const banksRef = db.collection('Bank');
+  const banksSnap = banksRef.where("Active", "==", true).get();
+  const banks = (await banksSnap).docs.map( bank => {
+    return { BankCode: bank.get('BankCode'), BankName: bank.get('BankName') }
+  });
+
+  return banks;
+});
+
+
 // onRequest
 //=====================================================================================
+
 
 // Recupera la lista de Transacciones con el Estado == "INCOMPLETE"
 exports.getTransaction = functions.https.onRequest( async(request, response) => {
@@ -486,36 +509,6 @@ export const getExchangeRate = functions.https.onRequest ( async (request, respo
   const exchangeRate = exchangeRateSanp.docs.map( exchange => exchange.data());
 
   response.json(exchangeRate);
-})
-
-
-// Recupera la coleccion de Bancos
-export const getBanks = functions.https.onRequest( async (request, response) => {
-  // const banco = request.query.banco;
-  // response.json({
-      // mensaje: banco
-  //   });
-
-  const banksRef = db.collection('Bank');
-  const banksSnap = await banksRef.where("Active", "==", true).get();
-  const banks = banksSnap.docs.map( bank => bank.data());
-
-  response.json( banks );
-});
-
-
-// Recupera una coleccion de las Cuentas de los Bancos usados para realizar las
-// transacciones de cambio de monedas de dolares a bolivianos y viceverssa (divisas).
-// export const getCompanyAccount = functions.https.onRequest( async (request, response) => {
-export const getCompanyAccount = functions.https.onCall( async (data, context) => {
-  const _currency = data.Currency;
-  console.log("Currency Services => ", _currency);
-  const accountRef = db.collection('CompanyAccount');
-  const accountSnap = accountRef.where("AccountCurrency", "==", _currency).get();
-  const accounts = (await accountSnap).docs.map( account => account.data());
-
-  return accounts;
-  // response.status(200).json( accounts);
 })
 
 
