@@ -52,42 +52,42 @@ app.use( validateFirebaseIdToken );
 // });
 
 
-// Creacion de Usuario de Autenticacion
-// exports.newUser = functions.https.onCall ((data, context) => {
-export const newUser = functions.https.onCall ((data, context) => {
+// // Creacion de Usuario de Autenticacion
+// // exports.newUser = functions.https.onCall ((data, context) => {
+// export const newUser = functions.https.onCall ((data, context) => {
 
-    const _email = data.email;
-    const _password = data.password;
-    const _displayName = data.displayName;
-    // const _phoneNumber = data.phoneNumber;
+//     const _email = data.email;
+//     const _password = data.password;
+//     const _displayName = data.displayName;
+//     // const _phoneNumber = data.phoneNumber;
     
-    return auth.createUser({
-      email: _email,
-      emailVerified: false,
-      password: _password,
-      displayName: _displayName,
-      disabled: false,
-      // phoneNumber: _phoneNumber,
-      // photoURL: "http://www.example.com/12345678/photo.png",
-    })
-        .then( userCredential => {
-          console.log('userCredential = > ', userCredential);
-          return {
-            Ok: true,
-            Code: userCredential.uid,
-            message: `Usuario Creado con el correo: ${_email}`
-          }
-        })
-        .catch((error) => {
-          console.log('Error => ', error);
-          return {
-            Ok: false,
-            errorCode: error.errorInfo.code,
-            message: error.errorInfo.message
-          }
-        });
-  }
-);
+//     return auth.createUser({
+//       email: _email,
+//       emailVerified: false,
+//       password: _password,
+//       displayName: _displayName,
+//       disabled: false,
+//       // phoneNumber: _phoneNumber,
+//       // photoURL: "http://www.example.com/12345678/photo.png",
+//     })
+//         .then( userCredential => {
+//           console.log('userCredential = > ', userCredential);
+//           return {
+//             Ok: true,
+//             Code: userCredential.uid,
+//             message: `Usuario Creado con el correo: ${_email}`
+//           }
+//         })
+//         .catch((error) => {
+//           console.log('Error => ', error);
+//           return {
+//             Ok: false,
+//             errorCode: error.errorInfo.code,
+//             message: error.errorInfo.message
+//           }
+//         });
+//   }
+// );
 
 
 exports.updateUser = functions.https.onCall( (data, context) => {
@@ -256,104 +256,6 @@ exports.getAccountBankCustomer = functions.https.onCall( (data, context) => {
           };
         })
 })
-
-
-// // Crea una coleccion de Transaccion de Compra/Venta de Moneda Nacional o Extranjera
-// // de un Customer/Cliente
-// exports.createCustomerTransaction = functions.https.onCall( (data, context) => {
-  
-//   const _userUID = context.auth?.uid || data.UserUID;
-//   const _transactionStatus = "INCOMPLETE";
-//   const _transactionDate = data.TransactionDate;
-//   const _typeOperation = data.TypeOperation;
-//   const _exchangeRateUsed = data.ExchangeRateUsed;
-//   const _transactionNumber = data.TransactionNumber;
-
-//   const _accountSourceBankCode = data.AccountSource.BankCode;
-//   const _accountSourceBankName = data.AccountSource.BankName;
-//   const _accountSourceCurrency = data.AccountSource.Currency;
-//   const _accountSourceAmount = data.AccountSource.Amount;
-
-//   const _accountTargetBankCode = data.AccountTarget.BankCode;
-//   const _accountTargetBankName = data.AccountTarget.BankName;
-//   const _accountTargetBankAccount = data.AccountTarget.BankAccount;
-//   const _accountTargetCurrency = data.AccountTarget.Currency;
-//   const _accountTargetAmount = data.AccountTarget.Amount;
-
-//   const _transferSourceBankCode = data.TransferSource.BankCode;
-//   const _transferSourceBankName = data.TransferSource.BankName;
-//   const _transferSourceBankAccount = data.TransferSource.BankAccount;
-//   const _transferSourceCurrency = data.TransferSource.Currency;
-//   const _transferSourceAmount = data.TransferSource.Amount;
-
-//   const _transferTargetBankCode = data.TransferTarget.BankCode;
-//   const _transferTargetBankName = data.TransferTarget.BankName;
-//   const _transferTargetBankAccount = data.TransferTarget.BankAccount;
-//   const _transferTargetCurrency = data.TransferTarget.Currency;
-//   const _transferTargetAmount = data.TransferTarget.Amount;
-
-//   // console.log("Se asignaron todas las variables.");
-//   return db.collection("CustomerTransaction")
-//             .add({
-//                 CustomerUId: _userUID,
-//                 TransactionStatus: _transactionStatus,
-//                 TransactionDate: admin.firestore.Timestamp.fromMillis(
-//                   Date.parse(_transactionDate) 
-//                 ),
-//                 TypeOperation: _typeOperation,
-//                 ExchangeRateUsed: _exchangeRateUsed,
-//                 TransactionNumber: _transactionNumber,
-
-//                 TransferDate: null,
-//                 TransferNumber: '',
-
-//                 AccountSource: {
-//                   BankCode: _accountSourceBankCode,
-//                   BankName: _accountSourceBankName,
-//                   Currency: _accountSourceCurrency,
-//                   Amount: _accountSourceAmount
-//                 },
-//                 AccountTarget: {
-//                   BankCode: _accountTargetBankCode,
-//                   BankName: _accountTargetBankName,
-//                   BankAccount: _accountTargetBankAccount,
-//                   Currency: _accountTargetCurrency,
-//                   Amount: _accountTargetAmount
-//                 },
-//                 TransferSource: {
-//                   BankCode: _transferSourceBankCode,
-//                   BankName: _transferSourceBankName,
-//                   BankAccount: _transferSourceBankAccount,
-//                   Currency: _transferSourceCurrency,
-//                   Amount: _transferSourceAmount
-//                 },
-
-//                 TransferTarget: {
-//                   BankCode: _transferTargetBankCode,
-//                   BankName: _transferTargetBankName,
-//                   BankAccount: _transferTargetBankAccount,
-//                   Currency: _transferTargetCurrency,
-//                   Amount: _transferTargetAmount
-//                 }
-//               })
-//             .then( (transaction) => {
-//               console.log("Transaccion creada exitosamente con Id: ", transaction.id);
-//               return {
-//                 Ok: true,
-//                 Code: transaction.id,
-//                 message: `Se creo exitosamente la transaccion en la colleccion de Transacciones con el Id: ${transaction.id}`
-//               };
-//             })
-//             .catch( (error) => {
-//               console.log("No se pudo actualizar la transacción: ", _userUID);
-
-//               return {
-//                 Ok: false,
-//                 Code: error.errorCode,
-//                 message: error.errorMessage
-//               };
-//             });
-// })
 
 
 // Actualiza la transaccion completando los datos de la transferencia
@@ -567,15 +469,16 @@ exports.deleteCustomer = functions.auth.user().onDelete( async (user) => {
 
 // Recupera una coleccion de las Cuentas de los Bancos usados para realizar las
 // transacciones de cambio de monedas de dolares a bolivianos y viceverssa (divisas).
-app.get('/companyaccounts/:currency', async (req, res)=> {
+app.get('/companyaccount/:currency', async (req, res)=> {
   const _currency = req.params.currency;
   
   const accountRef = db.collection('CompanyAccount');
   const accountSnap = await accountRef.where("AccountCurrency", "==", _currency)
                           .where("Active", "==", true)
                           .get();
+                          
   const accounts = accountSnap.docs.map( account => account.data());
-
+  
   res.status(200).json(accounts) ;
 })
 
@@ -612,24 +515,23 @@ app.post('/transactions', (req, res) => {
   const _transaction = req.body;
 
   db.collection("CustomerTransaction")
-            .add( _transaction );
-            // .then( (transaction) => {
-            //   console.log("Transaccion creada exitosamente con Id: ", transaction.id);
-            //   return {
-            //     Ok: true,
-            //     Code: transaction.id,
-            //     message: `Se creo exitosamente la transaccion en la colleccion de Transacciones con el Id: ${transaction.id}`
-            //   };
-            // })
-            // .catch( (error) => {
-            //   console.log("No se pudo actualizar la transacción: ", _transaction.UserUID);
-
-            //   return {
-            //     Ok: false,
-            //     Code: error.errorCode,
-            //     message: error.errorMessage
-            //   };
-            // });
+            .add( _transaction )
+            .then( (transaction) => {
+              console.log("Transaccion creada exitosamente con Id: ", transaction.id);
+              return {
+                Ok: true,
+                Code: transaction.id,
+                message: `Se creo exitosamente la transaccion en la colleccion de Transacciones con el Id: ${transaction.id}`
+              };
+            })
+            .catch( (error) => {
+              console.log("No se pudo crear la transacción: ", _transaction.UserUID);
+              return {
+                Ok: false,
+                Code: error.errorCode,
+                message: error.errorMessage
+              };
+            });
   res.status(201).send();
 })
 
